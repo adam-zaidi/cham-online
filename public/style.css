@@ -1,0 +1,142 @@
+@font-face {
+  font-family: 'ComicNeue';
+  src: url('https://cdn.glitch.global/61a1243c-4428-4472-a3ea-77db49762891/ComicNeue-Regular.woff?v=1740960698095') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'ComicNeue';
+  src: url('https://cdn.glitch.global/61a1243c-4428-4472-a3ea-77db49762891/ComicNeue-Bold.woff?v=1740960955975') format('woff');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'ComicNeue';
+  src: url('https://cdn.glitch.global/61a1243c-4428-4472-a3ea-77db49762891/ComicNeue-Italic.woff?v=1740960958811') format('woff');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'ComicNeue';
+  src: url('https://cdn.glitch.global/61a1243c-4428-4472-a3ea-77db49762891/ComicNeue-BoldItalic.woff?v=1740960961084') format('woff');
+  font-weight: 700;
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .container {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
+body {
+  font-family: 'ComicNeue', sans-serif;
+  margin: 0;
+  padding: 0 10px;
+  color: #3b3b3b;
+  
+  background: 
+    /* Color overlay with semi-transparency */
+    linear-gradient(rgba(194, 178, 128, 0.7), rgba(194, 178, 128, 0.7)), 
+    /* Background image */
+    url('https://cdn.glitch.global/61a1243c-4428-4472-a3ea-77db49762891/IMG_2493.JPG?v=1740962501387.jpg');
+  background-repeat: repeat;         /* Tile the image in both directions */
+  background-size: 30%;        /* Adjust these values as needed for a smaller image */
+  background-position: center;
+  height: 1650px;
+}
+
+.container {
+  max-width: 700px;
+  margin: 40px auto;
+  background: #F5F5DC;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+h1, h2, h3 {
+  margin-top: 0;
+  color: #556b2f;
+  font-weight: 700;
+}
+
+input[type="text"],
+input[type="number"],
+button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border: 1px solid #8B4513;
+  box-sizing: border-box;
+}
+
+label {
+  font-weight: 700;
+  display: block;
+  margin-top: 10px;
+}
+
+button {
+  background-color: #556b2f;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-family: 'ComicNeue', sans-serif;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #6b8e23;
+}
+
+a {
+  color: #556b2f;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.chameleon {
+  color: #d2691e;
+  font-weight: bold;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.instructions {
+  background-color: #e0d8b0;
+  border: 2px solid #8B4513; 
+  padding: 15px;
+  margin-top: 20px;
+  max-width: 700px;
+}
+
+.instructions h3 {
+  color: #556b2f;
+}
+
+.instructions ol {
+  padding-left: 20px;
+  list-style-position: inside;
+}
+
+.instructions li {
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
