@@ -41,7 +41,7 @@ body {
   
   background: 
     /* Color overlay with semi-transparency */
-    linear-gradient(rgba(194, 178, 128, 0.7), rgba(194, 178, 128, 0.7)), 
+    linear-gradient(rgba(194, 178, 128, 0.95), rgba(194, 178, 128, 0.95)), 
     /* Background image */
     url('https://cdn.glitch.global/61a1243c-4428-4472-a3ea-77db49762891/IMG_2493.JPG?v=1740962501387.jpg');
   background-repeat: repeat;         /* Tile the image in both directions */
