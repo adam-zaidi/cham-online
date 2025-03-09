@@ -111,7 +111,8 @@ app.post('/create', (req, res) => {
     players: {},  // Other players will join here.
     roundActive: false,
     secret: '',
-    category: ''
+    category: '',
+    starting_player: ""
   };
   
   // If the host opts for random chameleon assignment, add the host as a player.
@@ -209,6 +210,10 @@ app.get('/host/:code', (req, res) => {
 
   // If a round is active, show the active round view.
   if (game.roundActive) {
+    // choose random starting player
+    const player_names = Object.values(game.players).map(p => p.name).join(', ');
+    const starting_player = player_names[Math.floor(Math.random() * player_names.length)]
+    console.log(starting_player.name);
     // Build a list of chameleon names.
     const chameleonNames = Object.values(game.players)
       .filter(p => p.isChameleon)
@@ -227,7 +232,8 @@ app.get('/host/:code', (req, res) => {
       }
     } else {
       // If the host isn't participating as a player, show the secret word.
-      hostRoleInfo = `<h2>Secret Word: ${game.secret}</h2>`;
+      hostRoleInfo = `<h2>Secret Word: ${game.secret}</h2> </br>
+                      <p><strong>Chameleon(s):</strong> ${chameleonNames ? chameleonNames : "None"}</p>`;
     }
 
     return res.send(`<!DOCTYPE html>
@@ -242,7 +248,7 @@ app.get('/host/:code', (req, res) => {
     <h1>Game ${code} - Round In Progress</h1>
     <h2>Category: ${game.category}</h2>
     ${hostRoleInfo}
-    <p><strong>Chameleon(s):</strong> ${chameleonNames ? chameleonNames : "None"}</p>
+    <h2>Starting Player: ${game.startingPlayer}</h2>
     <hr>
     <form action="/newRound" method="POST">
       <input type="hidden" name="code" value="${code}">
@@ -295,6 +301,7 @@ app.get('/host/:code', (req, res) => {
     <h1>Game Code: ${code}</h1>
     <h2>Players Joined:</h2>
     ${playerListHtml}
+    <p><a href="/host/${code}">🔄 Refresh player list</a></p>
     <hr>
     <h3>Start a New Round</h3>
     <form action="/startRound" method="POST">
@@ -332,7 +339,6 @@ app.get('/host/:code', (req, res) => {
         <li><strong>New Round or End Game:</strong> You can start a new round with the same players or end the game.</li>
       </ol>
     </div>
-    <p><a href="/host/${code}">🔄 Refresh player list</a></p>
     <form action="/endGame" method="POST" style="margin-top:10px;">
       <input type="hidden" name="code" value="${code}">
       <button type="submit">End Game</button>
@@ -364,6 +370,9 @@ app.get('/game/:code/player/:playerId', (req, res) => {
 </html>`);
   }
   const player = game.players[playerId];
+  const player_names = Object.values(game.players).map(p => p.name).join(', ');
+  const starting_player = player_names[Math.floor(Math.random() * player_names.length)]
+  console.log(starting_player.name);
   if (!player) {
     return res.send(`<!DOCTYPE html>
 <html>
@@ -402,6 +411,8 @@ app.get('/game/:code/player/:playerId', (req, res) => {
 </html>`);
   } else {
     if (player.isChameleon) {
+      // Build the starting player info.
+      const startingPlayerInfo = `<h2>Starting Player: ${game.startingPlayer}</h2>`;
       res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -414,11 +425,14 @@ app.get('/game/:code/player/:playerId', (req, res) => {
     <h1>Game ${code}</h1>
     <h2>Category: ${game.category}</h2>
     <h2>You are the <span class="chameleon">Chameleon</span>!</h2>
+    ${startingPlayerInfo}
     <p>You do <strong>not</strong> know the secret word. Listen carefully and give a hint that blends in!</p>
   </div>
 </body>
 </html>`);
     } else {
+      // Build the starting player info.
+      const startingPlayerInfo = `<h2>Starting Player: ${game.startingPlayer}</h2>`;
       res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -431,6 +445,7 @@ app.get('/game/:code/player/:playerId', (req, res) => {
     <h1>Game ${code}</h1>
     <h2>Category: ${game.category}</h2>
     <h2>Secret Word: ${game.secret}</h2>
+    ${startingPlayerInfo}
     <p>Give a subtle hint about the secret word when it's your turn.</p>
   </div>
 </body>
@@ -497,6 +512,12 @@ app.post('/startRound', (req, res) => {
   playerIds.forEach(pid => {
     game.players[pid].isChameleon = chameleonIds.includes(pid);
   });
+  
+  // Choose one random player to be the starting player.
+  const playerKeys = Object.keys(game.players);
+  const randomIndex = Math.floor(Math.random() * playerKeys.length);
+  game.startingPlayer = game.players[playerKeys[randomIndex]].name;
+  
   game.secret = secret;
   game.category = category;
   game.roundActive = true;
@@ -511,6 +532,7 @@ app.post('/newRound', (req, res) => {
     game.roundActive = false;
     game.secret = '';
     game.category = '';
+    game.startingPlayer = "";
     for (const pid in game.players) {
       if (game.players.hasOwnProperty(pid)) {
         game.players[pid].isChameleon = false;
