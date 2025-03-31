@@ -34,6 +34,22 @@ function getRandomWord() {
   return { category: randomCategory, secret: randomWord };
 }
 
+// Weighted random selection function for number of chameleons.
+function chooseNumChameleons(n, alpha = 1) {
+  const r = 1 - 1 / Math.sqrt(n);
+  const q = Math.pow(r, alpha);
+  const denom = 1 - Math.pow(q, n);
+  const random = Math.random();
+  let cumulative = 0;
+  for (let k = 1; k <= n; k++) {
+    cumulative += (Math.pow(q, k - 1) * (1 - q)) / denom;
+    if (random <= cumulative) {
+      return k;
+    }
+  }
+  return n; // fallback
+}
+
 // Homepage: Options to create a new game or join an existing game.
 app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
@@ -226,7 +242,8 @@ app.get('/host/:code', (req, res) => {
       // If the host is playing, check if they are the chameleon.
       const hostIsCham = game.players[game.hostPlayerId].isChameleon;
       if (hostIsCham) {
-        hostRoleInfo = "<h2>You are the <span class='chameleon'>Chameleon</span>!</h2>";
+        hostRoleInfo = `<h2>You are the <span class='chameleon'>Chameleon</span>!</h2> </br> 
+        <p><strong>Other Chameleon(s):</strong> ${chameleonNames ? chameleonNames : "None"}</p>`;
       } else {
         hostRoleInfo = `<h2>Secret Word: ${game.secret}</h2>`;
       }
@@ -264,12 +281,24 @@ app.get('/host/:code', (req, res) => {
   }
 
   // Otherwise, when no round is active, show the lobby page to start a new round.
+  // When no round is active, build the player list with Kick buttons.
   let playerListHtml;
-  const players = Object.values(game.players);
-  if (players.length === 0) {
+  const playersEntries = Object.entries(game.players); // [playerId, playerData]
+  if (playersEntries.length === 0) {
     playerListHtml = '<p>No players have joined yet.</p>';
   } else {
-    playerListHtml = '<ul>' + players.map(p => `<li>${p.name}</li>`).join('') + '</ul>';
+    playerListHtml = '<ul>' + playersEntries.map(([pid, p]) => {
+      // Prevent the host from being kicked if they are in the players list.
+      let kickButton = '';
+      if (!(game.randomChameleon && pid === game.hostPlayerId)) {
+        kickButton = `<form action="/kick" method="POST" style="display:inline; margin-left:10px; width: 50px;">
+                        <input type="hidden" name="code" value="${code}">
+                        <input type="hidden" name="playerId" value="${pid}">
+                        <button type="submit" style="font-size:0.8em; width: 50px">Kick</button>
+                      </form>`;
+      }
+      return `<li>${p.name} ${kickButton}</li>`;
+    }).join('') + '</ul>';
   }
   
   // If random secret word is enabled, show a message instead of manual input fields.
@@ -323,7 +352,7 @@ app.get('/host/:code', (req, res) => {
       <p><em>— OR — assign chameleons randomly:</em></p>
       <p>
         <label>Number of Chameleons:</label>
-        <input type="number" name="randomCount" min="1" max="${Math.max(1, players.length - 1)}">
+        <input type="number" name="randomCount" min="1" max="${Math.max(1, playersEntries.length - 1)}">
       </p>
       <button type="submit">Start Round</button>
     </form>
@@ -346,6 +375,33 @@ app.get('/host/:code', (req, res) => {
   </div>
 </body>
 </html>`);
+});
+
+// Let the host kick players
+app.post('/kick', (req, res) => {
+  const code = (req.body.code || '').toUpperCase();
+  const playerId = req.body.playerId;
+  const game = games[code];
+  
+  if (!game) {
+    return res.send("Game not found.");
+  }
+  
+  // Prevent kicking if a round is active.
+  if (game.roundActive) {
+    return res.send("Cannot kick players during an active round.");
+  }
+  
+  // Prevent kicking the host if they are participating.
+  if (game.randomChameleon && playerId === game.hostPlayerId) {
+    return res.send("Host cannot be kicked.");
+  }
+  
+  // Remove the player from the game.
+  delete game.players[playerId];
+  
+  // Redirect back to the host lobby page to show the updated list.
+  res.redirect(`/host/${code}`);
 });
 
 // Player Page: Shows the player's role.
@@ -413,6 +469,16 @@ app.get('/game/:code/player/:playerId', (req, res) => {
     if (player.isChameleon) {
       // Build the starting player info.
       const startingPlayerInfo = `<h2>Starting Player: ${game.startingPlayer}</h2>`;
+      // find other chameleons
+      // Calculate total number of chameleons.
+      const allChams = Object.values(game.players).filter(p => p.isChameleon);
+      // For chameleons, list the other chameleons (excluding themselves)
+      let otherChamsText = "";
+      const otherChams = allChams.filter(p => p.name !== player.name);
+      otherChamsText = otherChams.length > 0 
+        ? otherChams.map(p => p.name).join(', ')
+        : "None";
+      
       res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -425,6 +491,7 @@ app.get('/game/:code/player/:playerId', (req, res) => {
     <h1>Game ${code}</h1>
     <h2>Category: ${game.category}</h2>
     <h2>You are the <span class="chameleon">Chameleon</span>!</h2>
+    <h3>Other Chameleons: ${otherChamsText}</h3>
     ${startingPlayerInfo}
     <p>You do <strong>not</strong> know the secret word. Listen carefully and give a hint that blends in!</p>
   </div>
@@ -493,6 +560,7 @@ app.post('/startRound', (req, res) => {
 </html>`);
   }
   let chameleonIds = [];
+  // If the host provided a specific number in the form.
   if (!isNaN(randomCount) && randomCount > 0) {
     if (randomCount >= playerIds.length) {
       randomCount = playerIds.length - 1;
@@ -505,12 +573,19 @@ app.post('/startRound', (req, res) => {
     } else {
       chameleonIds = [selectedChams];
     }
+  } else if (game.randomChameleon) {
+    // Use the weighted random function to choose how many chameleons.
+    const numChams = chooseNumChameleons(playerIds.length, 1.5); // Adjust the alpha value as desired
+    const shuffled = playerIds.slice().sort(() => Math.random() - 0.5);
+    chameleonIds = shuffled.slice(0, numChams);
   } else {
+    // Default: choose one chameleon.
     const randIndex = Math.floor(Math.random() * playerIds.length);
     chameleonIds = [playerIds[randIndex]];
   }
   playerIds.forEach(pid => {
     game.players[pid].isChameleon = chameleonIds.includes(pid);
+    console.log(game.players[pid].name);
   });
   
   // Choose one random player to be the starting player.
