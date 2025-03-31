@@ -10,11 +10,11 @@ router.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="/style.css">
-  <title>Chameleon Game</title>
+  <title>Chameleon Online</title>
 </head>
 <body>
   <div class="container">
-    <h1>Chameleon Game</h1>
+    <h1>Chameleon Online</h1>
     <div class="section">
       <h2>Create a New Game (Host)</h2>
       <form action="/create" method="POST">
@@ -31,6 +31,13 @@ router.get('/', (req, res) => {
           The Host is Participating
         </label>
         <br/>
+        <!--
+        <label>
+          <input type="checkbox" name="isDark" value="true">
+          After Dark Mode
+        </label>
+        </br>
+        -->
         <button type="submit">Create Game</button>
       </form>
     </div>
